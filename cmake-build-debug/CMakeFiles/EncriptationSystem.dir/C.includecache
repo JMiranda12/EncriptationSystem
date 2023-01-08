@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/joaomiranda/Desktop/EncriptationSystem/Inteiros.h
+
+/Users/joaomiranda/Desktop/EncriptationSystem/main.c
+stdio.h
+-
+Inteiros.h
+/Users/joaomiranda/Desktop/EncriptationSystem/Inteiros.h
+str.h
+/Users/joaomiranda/Desktop/EncriptationSystem/str.h
+
+/Users/joaomiranda/Desktop/EncriptationSystem/str.h
+
