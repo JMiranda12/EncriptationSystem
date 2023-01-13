@@ -3,7 +3,19 @@
 #ifndef ENCRIPTATIONSYSTEM_STR_H
 #define ENCRIPTATIONSYSTEM_STR_H
 
+typedef struct wallet_char {
+    char **matpubchar;
+    char **matprivchar;
+    char **matrunchar;
+    int lines;
+    int columns;
+}WALLET_CHAR;
 
+char* itoa(int num, char* buffer, int base);
+int isSorted(unsigned long long arr[], int size);
+int merge(unsigned long long a[], unsigned long long aux[], int lo, int mid, int hi);
+void sort(unsigned long long a[], unsigned long long aux[], int lo, int hi);
+void mergeSort(unsigned long long a[],int size);
 
 /**
  * Create an array of digits in ascii i.e. chars for a given key.

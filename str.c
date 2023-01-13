@@ -8,19 +8,133 @@
 #include <time.h>
 #define MAX_DIGITS 10
 
+int count_digits_char (unsigned long long key){
+    unsigned long long count =0;
+    while (key != 0){
+        count++;
+        key /= 10;
+    }
+    return count;
+}
+
+unsigned long long isBipolar(char *text){
+    char last;
+    int boolean=0;
+    for (int i = 0; i < text[i]!='\0'; ++i) // verifica se e numero
+        if(text [i] < '0' || text [i] > '9')return -2;
+    for (int i = 0;text[i]!='\0'; ++i) {
+        if (i==0)last=text[i];
+        if(boolean==0){
+            if (text[i] == last){
+                continue;
+            }else{
+                boolean=1;
+                last=text[i];
+            }
+        }else if(text[i] != last)return -1;
+
+    }
+    if (boolean==0)return -1;
+    return atoi(text);
+}
+
+char* itoa(int num, char* buffer, int base){
+    int current = 0;
+    if (num == 0) {
+        buffer[current++] = '0';
+        buffer[current] = '\0';
+        return buffer;
+    }
+    int num_digits = 0;
+    if (num < 0) {
+        if (base == 10) {
+            num_digits ++;
+            buffer[current] = '-';
+            current ++;
+            num *= -1;
+        }
+        else
+            return NULL;
+    }
+    num_digits += (int)floor(log(num) / log(base)) + 1;
+    while (current < num_digits)
+    {
+        int base_val = (int) pow(base, num_digits-1-current);
+        int num_val = num / base_val;
+        char value = num_val + '0';
+        buffer[current] = value;
+        current ++;
+        num -= base_val * num_val;
+    }
+    buffer[current] = '\0';
+    return buffer;
+}
+
+
+void reset_matrix_char(char **matrix, int lines){
+    for (int k = 0; k < lines; ++k) {
+        *(matrix+k)= calloc(20,sizeof (char));
+    }
+}
+
+int isSorted(unsigned long long arr[], int size) {
+
+    for (int i = 0; i < size - 1; i++) {
+        if (arr[i] > arr[i + 1]) {
+            return -1;
+        }
+
+    }
+    return 1;
+}
+
+//merge sort
+int merge(unsigned long long a[], unsigned long long aux[], int lo, int mid, int hi) {
+    for (int k = lo; k <= hi; k++) {
+        aux[k] = a[k];
+    }
+
+    int i = lo;
+    int j = mid + 1;
+
+    for (int k = lo; k <= hi; k++) {
+        if (i > mid) a[k] = aux[j++];
+        else if (j > hi) a[k] = aux[i++];
+        else if (aux[j] < aux[i]) a[k] = aux[j++];
+        else a[k] = aux[i++];
+    }
+
+}
+
+//merge sort algorithm - vai divindo os arrays através dos indices e no final dá merge
+void sort(unsigned long long a[], unsigned long long aux[], int lo, int hi) {
+    if (hi <= lo) return;
+    int mid = lo + (hi - lo) / 2;
+    sort(a, aux, lo, mid);
+    sort(a, aux, mid + 1, hi);
+    merge(a, aux, lo, mid, hi);
+}
+
+// sorted em ordem crescente
+void mergeSort(unsigned long long a[],int size){
+    unsigned long long aux[size];
+    sort(a, aux, 0, size - 1);
+}
+
 
 char* key_long_2_digits_char(unsigned long long key) {
-    // Calculate the number of digits in the key
+    // numero de digitos na key
     int num_digits = 0;
     unsigned long long temp = key;
     while (temp > 0) {
         num_digits++;
         temp /= 10;
     }
-    // Allocate an array of characters to hold the digits
+
+    // Aloca um array de caracteres para guardar os digitos
     char* digits = malloc(num_digits * sizeof(char));
 
-    // Convert each digit of the key to a character and add it to the array
+    // Converte cada digito da chave para um caracter e adiciona-o
     temp = key;
     for (int i = num_digits - 1; i >= 0; i--) {
         digits[i] = (temp % 10) + '0';
@@ -41,31 +155,32 @@ unsigned long long key_digits_2_long_char(char* keydigits) {
 }
 
 
-unsigned long long calc_private_key_char(unsigned long long pubkey) {
-    // Generate the first bipolar number (11)
-    char privkey[3] = {'1', '1', '\0'};
-
-    // Keep generating successive bipolar numbers until a multiple of pubkey is found
-    while (key_digits_2_long_char(privkey) % pubkey != 0) {
-        // Increment the second digit of the current bipolar number
-        privkey[1]++;
-
-        // If the second digit is greater than 9, set it to 0 and increment the first digit
-        if (privkey[1] > '9') {
-            privkey[1] = '0';
-            privkey[0]++;
+//Abordagem de gerar multiplos de n até encontrar um nr bipolar
+unsigned long long calc_private_key_char(unsigned long long num) {
+    unsigned long long mult = 0;
+    char snum[100];
+    unsigned long long nreturn = 0;
+    int i = 2;
+    int call = 0;
+    while (1) {
+        mult = num * i;
+        itoa(mult, snum, 10);
+        nreturn = isBipolar(snum);
+        if (nreturn != -1) {
+            //printf("%d * %d = %llu\n",num,i,mult);
+            //printf("%llu\n",mult);
+            return nreturn;
         }
+        i++;
     }
-    // Return the private key as a long integer
-    return key_digits_2_long_char(privkey);
+    return -1;
 }
 
-unsigned long long calc_runlength_char(unsigned long long privkey){
-    // Create a string to store the run-length encoding
+unsigned long long calc_runlength_char(unsigned long long privkey) {
+    // Cria uma string para guardar a codificação run-length
     char run_length[20];
     int index = 0;
 
-    // Count the number of occurrences of each digit in the private key
     short digits[10] = {0};
     int num_digits = 0;
     unsigned long long temp = privkey;
@@ -76,163 +191,135 @@ unsigned long long calc_runlength_char(unsigned long long privkey){
         temp /= 10;
     }
 
-    // Encode the private key using run-length encoding
+    // Codifica a private key
     for (int i = 0; i < 10; i++) {
         if (digits[i] > 0) {
-            // Add the count of the digit to the run-length encoding
+            // Adiciona a contagem dos digitos ao run-length
             char digit_count[20];
             sprintf(digit_count, "%d", digits[i]);
             for (int j = 0; digit_count[j] != '\0'; j++) {
                 run_length[index++] = digit_count[j];
             }
-            // Add the digit to the run-length encoding
+            //Adiciona o digito ao run-length
             run_length[index++] = i + '0';
+            }
         }
-    }
-    // Add the null terminator to the end of the run-length encoding
+    // null terminator
     run_length[index] = '\0';
 
-    // Convert the run-length encoding to an unsigned long long
+    // Converte o run-length para um unsigned long long
     unsigned long long runlengthkey = strtoull(run_length, NULL, 10);
 
-    // Return the run-length encoding as an unsigned long long
     return runlengthkey;
 }
 
-
-
 unsigned long long private_key_from_runlength_char(unsigned long long runlengthkey){
-    // Create a string to store the run-length encoding
-    char run_length[20];
-    sprintf(run_length, "%llu", runlengthkey);
+    int array[4];
+    unsigned long long Bipolar=0;
+    array[3]=runlengthkey%10;
+    runlengthkey /= 10;
+    array[2]=runlengthkey%10;
+    runlengthkey/=10;
+    array[1]=runlengthkey%10;
+    runlengthkey/=10;
+    array[0]=runlengthkey;
 
-    // Create a string to store the private key
-    char private_key[20];
-    int index = 0;
 
-    // Decode the run-length encoding to obtain the private key
-    for (int i = 0; run_length[i] != '\0'; i += 2) {
-        // Get the count of the digit
-        char digit_count[20];
-        digit_count[0] = run_length[i];
-        digit_count[1] = '\0';
-        int count = atoi(digit_count);
-
-        // Get the digit
-        char digit[2];
-        digit[0] = run_length[i + 1];
-        digit[1] = '\0';
-        int num = atoi(digit);
-
-        // Add the digit to the private key the appropriate number of times
-        for (int j = 0; j < count; j++) {
-            private_key[index++] = num + '0';
-        }
+    for (int i = 0; i < array[0]; ++i) {
+        Bipolar+=array[1];
+        Bipolar*=10;
     }
-    // Add the null terminator to the end of the private key
-    private_key[index] = '\0';
-
-    // Convert the private key to an unsigned long long
-    unsigned long long privkey = strtoull(private_key, NULL, 10);
-
-    // Return the private key
-    return privkey;
+    for (int i = 0; i < array[2]; i++) {
+        Bipolar+=array[3];
+        if (i!=array[2]-1)
+            Bipolar*=10;
+    }
+    return Bipolar;
 }
 
-
-char** alloc_matrix_char(int nlines, int ncolumns) {
-    char** matrix;
+char **alloc_matrix_char(int nlines, int ncolumns) {
+    char **matrix;
     int i;
-    matrix = (char**) malloc(nlines * sizeof(char*));
+    matrix = (char **) malloc(nlines * sizeof(char *));
     for (i = 0; i < nlines; i++) {
-        matrix[i] = (char*) malloc(ncolumns * sizeof(char));
+        matrix[i] = (char *) malloc(ncolumns * sizeof(char));
     }
     return matrix;
 }
 
-void store_key_char(char** matrix, int lines, unsigned long long key) {
-    // Convert key to array of digits
-    char* keydigits = key_long_2_digits_char(key);
-    int i;
-    // Find first empty position in matrix
-    for (i = 0; i < lines; i++) {
-        if (matrix[i][0] == 0) {
-            // Found empty position, store key in matrix
-            int j;
-            for (j = 0; j < strlen(keydigits); j++) {
-                matrix[i][j] = keydigits[j];
-            }
-            break;
-        }
+char ** store_key_char(char **matrix, int *plines,int ncolumns, unsigned long long key){
+    int length = count_digits_char(key);
+    int n1=0,i=0,j=0,k=0;
+
+    while(*(matrix+j)!=NULL && *(*(matrix+j)+0)!='\0'){//    while(matrix[j]!=NULL && matrix[j][0]!='\0')
+        j++;
     }
-    free(keydigits);
+    if (j==*plines){
+        printf("Preciso fazer realloc j=%d\n",j);
+        int oldSize=*plines;//10+1
+        int newSize=*plines+15;//20
+        matrix = realloc (matrix,(newSize+1)* sizeof (char*)) ;//o +1 corresponde a ultima posição a NULL
+        for (k = oldSize; k < newSize; ++k) {
+            *(matrix+k)= calloc(ncolumns,sizeof (char));
+        }
+        *(matrix+k)=NULL;
+        *plines=newSize;
+
+    }
+    for (i = length-1; i != -1; --i) {
+        n1=key%10;
+        key/=10;
+        *(*(matrix+j)+i)='0'+n1;
+    }
+
+    return matrix;
 }
 
 
-int exists_key_char(char** matrix, int lines, unsigned long long key) {
-    int i, j;
-    char keydigits[12];
-    sprintf(keydigits, "%llu", key);
-    int keylength = strlen(keydigits);
-    for (i = 0; i < lines; i++) {
-        int currkeylength = strlen(matrix[i]);
-        if (currkeylength != keylength) {
-            continue;
-        }
-        int isequal = 1;
-        for (j = 0; j < keylength; j++) {
-            if (matrix[i][j] != keydigits[j]) {
-                isequal = 0;
+int exists_key_char(char **matrix, int lines, unsigned long long key){
+    int length = count_digits_char(key);
+    char array[length];
+    char digito[2];
+    int n=0;
+    for (int i = length-1; i != -1; --i) {
+        n=key%10;
+        key/=10;
+        itoa(n,digito,10);
+        array[i]=digito[0];
+    }
+    for (int i = 0; i < lines; ++i) {//linhas
+        for (int j = 0; j < length; ++j) {//colunas
+            if (matrix[i][j]!=array[j])
                 break;
+            if (j==length-1){
+                //printf("%d\n",i);
+                return i;
             }
         }
-        if (isequal) {
-            return 1;
-        }
     }
-    return 0;
+    return -1;
 }
 
 
-unsigned long long get_private_key_char(char** matrix_kpub, char** matrix_kpriv, int lines, unsigned long long pubkey) {
-    int i, j;
-    unsigned long long privkey;
-    for (i = 0; i < lines; i++) {
-        privkey = 0;
-        for (j = 0; j < strlen(matrix_kpub[i]); j++) {
-            privkey = privkey * 10 + (matrix_kpub[i][j] - '0');
-        }
-        if (privkey == pubkey) {
-            privkey = 0;
-            for (j = 0; j < strlen(matrix_kpriv[i]); j++) {
-                privkey = privkey * 10 + (matrix_kpriv[i][j] - '0');
-            }
-            return privkey;
-        }
+unsigned long long get_private_key_char(char **matrix_kpub, char **matrix_kpriv, int lines, unsigned long long pubkey){
+    unsigned long long nreturn=0;
+    int posicao= exists_key_char(matrix_kpub,lines,pubkey);
+    if (posicao!=-1){
+        nreturn= key_digits_2_long_char(*(matrix_kpriv + posicao));
     }
-    return 0;
+    return nreturn;
 }
 
-unsigned long long get_runlength_char(char** matrix_kpriv, char** matrix_kcod, int lines, unsigned long long privkey) {
-    int i;
-    for (i = 0; i < lines; i++) {
-// Convert private key from matrix_kpriv to long long
-        char* privkey_str = matrix_kpriv[i];
-        unsigned long long privkey_long = strtoull(privkey_str, NULL, 10);
-
-        if (privkey == privkey_long) {
-            // Found private key, get corresponding run-length key
-            char* runlength_str = matrix_kcod[i];
-            unsigned long long runlength_long = strtoull(runlength_str, NULL, 10);
-            return runlength_long;
-        }
+unsigned long long get_runlength_char(char **matrix_kpriv, char **matrix_kcod, int lines, unsigned long long privkey){
+    unsigned long long nreturn=0;
+    int position= exists_key_char(matrix_kpriv, lines, privkey);
+    if (position != -1){
+        nreturn= key_digits_2_long_char(*(matrix_kcod + position));
     }
-
-// Private key not found
-    return 0;
+    return nreturn;
 }
 
-unsigned long long delete_key_char(char** matrix_kpub, char** matrix_kpriv, char** matrix_kcod, int lines, unsigned long long pubkey) {
+unsigned long long delete_key_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int lines, unsigned long long pubkey) {
     int i;
     unsigned long long privkey = 0;
     for (i = 0; i < lines; i++) {
@@ -247,111 +334,155 @@ unsigned long long delete_key_char(char** matrix_kpub, char** matrix_kpriv, char
     return privkey;
 }
 
+char ** bulk_populate_public_keys_char(char **matrix_kpub, int *plines);
+/* {   //gera chaves , guarda em string dinamica  e faz o copy
+    unsigned long long random = new_public_key_int();
+    matrix_kpub = store_key_char(matrix_kpub, plines,20 ,);
+    return matrix_kpub;
+}*/
 
-void bulk_populate_public_keys_char(char** matrix_kpub, int lines) {
-    int i;
-    for (i = 0; i < lines; i++) {
-        // Generate a random public key between 1 and 100000
-        unsigned long long pubkey = new_public_key_int();
 
-        // Convert the public key to an array of digits in ASCII
-        char* pubkey_digits = key_long_2_digits_char(pubkey);
+char ** bulk_compute_private_keys_char(char **matrix_kpub, char **matrix_kpriv, int *plines);
+ /*
+  * {unsigned  long long number;
+    unsigned  long long bipolar_number;
+    for (int i = 0; i < *(matrix_kpub + i) != NULL; ++i) {
+        if (*(*(matrix_kpub+ i) + 0) != '\0') {
+            number=key_digits_2_long_char(*(matrix_kpub+ i));//converter de string para llu
+            bipolar_number=calc_private_key_char(number);
+            matrix_kpriv=store_key_char(matrix_kpriv, plines,20, bipolar_number);
+        }
+    }
+    return matrix_kpriv;
+}*/
 
-        // Store the public key in the matrix
-        store_key_char(matrix_kpub, lines, pubkey_digits);
+char ** bulk_compute_runlengths_char(char **matrix_kpriv, char **matrix_kcod, int *plines);
+/*    {   unsigned  long long number;
+    unsigned  long long bipolar;
+    for (int i = 0; i < *(matrix_kpriv + i) != NULL; ++i) {
+        if (*(*(matrix_kpriv+ i) + 0) != '\0') {
+            number = key_digits_2_long_char(*(matrix_kpriv + i));//converter de string para llu
+            //number=key_digits_2_long_char(matrix_kpriv+ i);
+            bipolar = calc_runlength_char(number);
+            matrix_kcod = store_key_char(matrix_kcod, plines, 20, bipolar);
+        }
+    }
+    return matrix_kcod;
+}*/
 
-        // Free the memory allocated for the array of digits
-        free(pubkey_digits);
+char** search_private_keys_char(char **matrix_kpub, char **matrix_kpriv, int lines, unsigned long long partialpubkey){
+        char *ret;
+        int nd=0;
+        int position=1;
+        unsigned long long num=0;
+
+        char* partialkey=key_long_2_digits_char(partialpubkey);
+
+        for (int i = 0; i < lines; ++i) {
+            ret = strstr(*(matrix_kpub+i), partialkey);
+            if (ret!=NULL){
+                nd++;
+            }
+        }
+        unsigned long long  *arr = (unsigned long long *) calloc (nd, sizeof(unsigned long long));
+        arr[0]=nd;
+        for (int i = 0; i < lines; ++i) {
+            ret = strstr(*(matrix_kpub+i), partialkey);
+            if (ret!=NULL){
+                //printf("%s\n",*(matrix_kpriv+i));
+                num = key_digits_2_long_char(*(matrix_kpriv+i));
+                arr[position]=num;
+                position++;
+            }
+        }
+        return arr;
+
+    }
+
+void sort_matrix_char(char **matrix, int lines, int order){
+    unsigned long long arr[lines];
+    for (int i = 0; i < lines; ++i) {
+        arr[i]=key_digits_2_long_char(*(matrix+ i));
+    }
+    if (order==1){
+        mergeSort(arr,lines);
+    }else{
+        for ( int i = 0 ; i < lines; i++)
+        {
+            for ( int j = i; j < lines; j++)
+            {
+                if (arr[i] < arr[j])
+                {
+                    unsigned long long aux= arr[i];
+                    arr[i] = arr[j];
+                    arr[j] = aux;
+                }
+            }
+        }
+    }
+    //limpa a matriz
+    for (int k = 0; k < lines; ++k) {
+        *(matrix+k)= calloc(20,sizeof (char));
+    }
+    for (int i = 0; i < lines; ++i) {
+        *(matrix+i)=key_long_2_digits_char(arr[i]);
+    }
+
+}
+
+void sort_all_matrices_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int *plines, int order){
+    sort_matrix_char(matrix_kpub,*plines,order);
+    sort_matrix_char(matrix_kpriv,*plines,order);
+    sort_matrix_char(matrix_kcod,*plines,order);
+}
+
+void list_keys_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int *plines, int order){
+    sort_matrix_char(matrix_kpub,*plines,order);
+    reset_matrix_char(matrix_kpriv,*plines);
+    reset_matrix_char(matrix_kcod,*plines);
+    bulk_compute_private_keys_char(matrix_kpub, matrix_kpriv, &plines);
+    bulk_compute_runlengths_char(matrix_kpriv, matrix_kcod, &plines);
+}
+
+void save_txt_keys_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int lines, char filename[]){
+    FILE * fp;
+    fp=fopen(filename,"w");
+    if(fp!=NULL){
+        fprintf(fp,"Number of keys:%d\n",lines);
+        fprintf(fp,"ID PUB\t\t PRIV\t\t\t RUN\n");
+        for (int i = 0; *(matrix_kpub + i) != NULL; i++) {
+            fprintf(fp,"%d %s\t\t %s\t\t\t %s\n",i,*(matrix_kpub + i),*(matrix_kpriv + i),*(matrix_kcod + i));
+        }
+        fclose(fp);
+    }else{
+        printf("ERRO FICHEIRO");
+    }
+}
+
+void load_txt_keys_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int *plines, char filename[]){
+    FILE *fp;
+    fp=fopen(filename,"r");
+    if(fp!=NULL){
+        fscanf(fp,"%*s %*s %*s\n");
+        fscanf(fp,"%*s %*s\t\t %*s\t\t\t %*s\t\t\t\n");
+
+        char pub[100],priv[100],run[100];
+        int i2=0;
+        //for(int i=0;i<1500;i++){
+        //fscanf(fp,"%d %s\t %s\t %s\n",&i2,pub,priv,run);
+        while ((fscanf(fp,"%d %s\t\t %s\t\t\t %s\n",&i2,pub,priv,run))!=EOF){
+            unsigned long long numero = strtoul (pub, NULL, 10);
+            unsigned long long numero1 = strtoul (priv, NULL, 10);
+            unsigned long long numero2 = strtoul (run, NULL, 10);
+            //printf("[%d] %llu %llu %llu\n",i,numero,numero1,numero2);
+            matrix_kpub=store_key_char(matrix_kpub, plines,20, numero);
+            matrix_kpriv=store_key_char(matrix_kpriv, plines,20, numero1);
+            matrix_kcod=store_key_char(matrix_kcod, plines,20, numero2);
+        }
+        fclose(fp);
+
     }
 }
 
 
-void bulk_compute_private_keys_char(char **matrix_kpub, char **matrix_kpriv, int lines);
-
-/**
- * Automatically calculate and store all run-lengths for the existing private keys.
- * @param matrix_kpriv - private keys matrix
- * @param matrix_kcod - run-lengths matrix
- * @param lines - matrix number of lines
- */
-    void bulk_compute_runlengths_char(char **matrix_kpriv, char **matrix_kcod, int lines);
-
-/**
- * Return a list of all private keys matching a given partial public key.
- * @param matrix_kpub - public keys matrix
- * @param matrix_kpriv - private keys matrix
- * @param lines - matrix number of lines
- * @param partialpubkey - part of public key to filter the private keys
- * @return array of private keys matching the partialpubkey
- */
-    char **
-    search_private_keys_char(char **matrix_kpub, char **matrix_kpriv, int lines, unsigned long long partialpubkey);
-
-/**
- * Sort a matrix keys in ascending or descending order
- * @param matrix - matrix to be sorted
- * @param lines - matrix number of lines
- * @param order - order == 1 ? ascending : descending
- */
-    void sort_matrix_char(char **matrix, int lines, int order);
-
-/**
- * Sort all matrices keys in ascending or descending order
- * @param matrix_kpub - public keys matrix
- * @param matrix_kpriv - private keys matrix
- * @param matrix_kcod - run-lengths matrix
- * @param lines - matrix number of lines
- * @param order - order == 1 ? ascending : descending
- */
-    void sort_all_matrices_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int lines, int order);
-
-/**
- * Print all keys on the console, sorted by pubkeys sizes (i.e. number of digits).
- * @param matrix_kpub - public keys matrix
- * @param matrix_kpriv - private keys matrix
- * @param matrix_kcod - run-lengths matrix
- * @param lines - matrix number of lines
- * @param order - order == 0 ? current order : order == 1 ? ascending : descending
- */
-    void list_keys_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int lines, int order);
-
-/**
- * Save all matrix data to a text file
- * @param matrix_kpub - public keys matrix
- * @param matrix_kpriv - private keys matrix
- * @param matrix_kcod - run-lengths matrix
- * @param lines - matrix number of lines
- * @param filename - name of the text file where to store the data
- */
-    void save_txt_keys_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int lines, char filename[]);
-
-/**
- * Loads data into the matrices from a text file.
- * @param matrix_kpub - public keys matrix
- * @param matrix_kpriv - private keys matrix
- * @param matrix_kcod - run-lengths matrix
- * @param lines - matrix number of lines
- * @param filename - name of the text file to load data from
- */
-    void load_txt_keys_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int lines, char filename[]);
-
-/**
- * Save all matrix data to a binary file
- * @param matrix_kpub - public keys matrix
- * @param matrix_kpriv - private keys matrix
- * @param matrix_kcod - run-lengths matrix
- * @param lines - matrix number of lines
- * @param filename - name of the binary file where to store the data
- */
-    void save_bin_keys_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int lines, char filename[]);
-
-/**
- * Loads data into the matrices from a binary file.
- * @param matrix_kpub - public keys matrix
- * @param matrix_kpriv - private keys matrix
- * @param matrix_kcod - run-lengths matrix
- * @param lines - matrix number of lines
- * @param filename -name of the binary file to load data from
- */
-    void load_bin_keys_char(char **matrix_kpub, char **matrix_kpriv, char **matrix_kcod, int lines, char filename[]);
 

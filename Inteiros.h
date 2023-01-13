@@ -2,6 +2,13 @@
 #ifndef ENCRIPTATIONSYSTEM_INTEIROS_H
 #define ENCRIPTATIONSYSTEM_INTEIROS_H
 
+typedef struct wallet_int {
+    char **matpubint;
+    char **matprivint;
+    char **matrunint;
+    int lines;
+    int columns;
+}WALLET_INT;
 
 /*
  * Generate a random integer to be used as the public key.
